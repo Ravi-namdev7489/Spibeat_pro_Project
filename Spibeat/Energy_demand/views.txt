@@ -1,0 +1,387 @@
+from django.http import HttpResponse, JsonResponse
+import pandas as pd
+import json
+from django.views.decorators.csrf import ensure_csrf_cookie
+from .demand.total_demand import total_demand
+from .demand.inputLocator import InputLocator
+from django.views.decorators.csrf import csrf_exempt
+from .demand.Final_total_demand import final_total_demand
+import os
+
+
+
+# ==========================================
+# SET CSRF COOKIE
+# ==========================================
+@ensure_csrf_cookie
+def home(request):
+    return HttpResponse("this is demand page")
+
+
+locator = InputLocator()
+
+
+# ==========================================
+# GET DATABASE PATHS + USE TYPES
+import pandas as pd
+from django.http import JsonResponse
+
+import pandas as pd
+import os
+from django.http import JsonResponse
+
+
+# ==========================================
+# SAFE CSV READER
+# ==========================================
+
+def read_csv_safe(path):
+
+    if not os.path.exists(path):
+        print("File not found:", path)
+        return {
+            "columns": [],
+            "rows": []
+        }
+
+    try:
+        df = pd.read_csv(path, encoding="utf-8")
+
+    except UnicodeDecodeError:
+        # fallback for Excel files
+        df = pd.read_csv(path, encoding="latin1")
+
+    return {
+        "columns": df.columns.tolist(),
+        "rows": df.to_dict(orient="records")
+    }
+
+
+# ==========================================
+# INPUT LOCATOR API
+# ==========================================
+
+def input_locator(request):
+
+    # =============================
+    # USE TYPES
+    # =============================
+
+    try:
+        df = pd.read_csv(locator.get_use_types(), encoding="latin1")
+        use_list = df["use_type"].dropna().unique().tolist()
+
+    except Exception as e:
+        print("Use types error:", e)
+        use_list = []
+
+
+    # =============================
+    # ENVELOPE FILES
+    # =============================
+
+    floor = read_csv_safe(locator.get_envelope_floor())
+    wall = read_csv_safe(locator.get_envelope_wall())
+    roof = read_csv_safe(locator.get_envelope_roof())
+    shading = read_csv_safe(locator.get_envelope_shading())
+    tightness = read_csv_safe(locator.get_envelope_tightness())
+    window = read_csv_safe(locator.get_envelope_window())
+
+
+    # =============================
+    # FINAL RESPONSE
+    # =============================
+
+    data = {
+
+        "database_path": locator.database_root,
+
+        "archetypes": locator.get_archetypes(),
+
+        "assemblies": locator.get_assemblies(),
+
+        "components": locator.get_components(),
+
+        "envelope_dir": locator.get_envelope_dir(),
+
+        "hvac_dir": locator.get_hvac_dir(),
+
+        "supply_dir": locator.get_supply_dir(),
+
+        "floor": floor,
+        "wall": wall,
+        "roof": roof,
+        "shading": shading,
+        "tightness": tightness,
+        "window": window,
+
+        "use_types": use_list
+    }
+
+    return JsonResponse(data)
+# ======================================================
+# GET DATA
+# ======================================================
+import os
+import json
+import pandas as pd
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+def get_use_data(request):
+    use = request.GET.get("use")
+    if not use:
+        return JsonResponse({"error": "No use type provided"})
+
+    # 1. Load use_types.csv
+    use_df = pd.read_csv(locator.get_use_types())
+    use_df.columns = use_df.columns.str.strip()
+    row = use_df[use_df["use_type"] == use]
+    if row.empty:
+        return JsonResponse({"error": "Use type not found"})
+    use_row = row.iloc[0].to_dict()
+
+    # 2. Load schedule CSV
+    schedule_file = os.path.join(locator.get_schedule_library(), f"{use}.csv")
+    if os.path.exists(schedule_file):
+        schedule_df = pd.read_csv(schedule_file)
+        schedule_data = {
+            "columns": schedule_df.columns.tolist(),
+            "rows": schedule_df.to_dict(orient="records")
+        }
+    else:
+        schedule_data = {"columns": [], "rows": []}
+
+    # 3. Load multipliers
+    def read_multiplier(type_name):
+        path = locator.get_monthly_multiplier(type_name)
+        if not os.path.exists(path):
+            return {}
+        df = pd.read_csv(path)
+        df.columns = df.columns.str.strip()
+        row = df[df["use_type"] == use]
+        return row.iloc[0].to_dict() if not row.empty else {}
+
+    response = {
+        "use_row": use_row,
+        "schedule": schedule_data,
+        "mul_HW_row": read_multiplier("HW"),
+        "mul_AC_row": read_multiplier("AC"),
+        "mul_AUX_row": read_multiplier("AUX"),
+        "mul_EaEl_row": read_multiplier("EaEl")
+    }
+    return JsonResponse(response)
+
+
+
+@csrf_exempt
+def save_use_data(request):
+
+    # ===============================
+    # VALIDATE METHOD
+    # ===============================
+    if request.method != "POST":
+        return JsonResponse({"error": "POST request required"})
+
+
+    # ===============================
+    # READ JSON BODY
+    # ===============================
+    try:
+        body = json.loads(request.body)
+        print("Incoming Data:", body)
+    except Exception as e:
+        print("JSON ERROR:", e)
+        return JsonResponse({"error": "Invalid JSON"})
+
+
+    # ===============================
+    # GET DATA FROM FRONTEND
+    # ===============================
+    archetypes = body.get("archetypes", {})
+    assemblies = body.get("assemblies", {})
+    components = body.get("components", {})
+
+    locator = InputLocator()
+
+
+    # =====================================================
+    # 1️⃣ SAVE ARCHETYPE DATA
+    # =====================================================
+
+    use = archetypes.get("use_type")
+    row_data = archetypes.get("row_data", {})
+    multipliers = archetypes.get("multipliers", {})
+    schedule_rows = archetypes.get("schedule_rows", [])
+
+    print("Use Type:", use)
+
+    if use:
+
+        # ---------------------------
+        # UPDATE use_types.csv
+        # ---------------------------
+
+        try:
+
+            use_types_path = locator.get_use_types()
+
+            print("Saving to:", use_types_path)
+
+            use_df = pd.read_csv(use_types_path)
+            use_df.columns = use_df.columns.str.strip()
+
+            index_list = use_df[use_df["use_type"] == use].index
+
+            if len(index_list) > 0:
+
+                row_index = index_list[0]
+
+                for key, value in row_data.items():
+
+                    if key in use_df.columns:
+                        use_df.at[row_index, key] = value
+
+                use_df.to_csv(use_types_path, index=False)
+
+        except Exception as e:
+            print("Error saving use_types:", e)
+
+
+
+        # ---------------------------
+        # UPDATE MONTHLY MULTIPLIERS
+        # ---------------------------
+
+        def update_multiplier(type_name, values):
+
+            try:
+
+                path = locator.get_monthly_multiplier(type_name)
+
+                if not os.path.exists(path):
+                    print("Multiplier file missing:", path)
+                    return
+
+                mul_df = pd.read_csv(path)
+                mul_df.columns = mul_df.columns.str.strip()
+
+                idx = mul_df[mul_df["use_type"] == use].index
+
+                if len(idx) == 0:
+                    return
+
+                row_index = idx[0]
+
+                for key, value in values.items():
+
+                    if key in mul_df.columns:
+                        mul_df.at[row_index, key] = value
+
+                mul_df.to_csv(path, index=False)
+
+                print("Updated multiplier:", type_name)
+
+            except Exception as e:
+                print("Multiplier error:", type_name, e)
+
+
+        update_multiplier("HW", multipliers.get("HW", {}))
+        update_multiplier("AC", multipliers.get("AC", {}))
+        update_multiplier("AUX", multipliers.get("AUX", {}))
+        update_multiplier("EaEl", multipliers.get("EaEl", {}))
+
+
+
+        # ---------------------------
+        # SAVE SCHEDULE CSV
+        # ---------------------------
+
+        try:
+
+            if schedule_rows:
+
+                schedule_path = os.path.join(
+                    locator.get_schedule_library(),
+                    f"{use}.csv"
+                )
+
+                print("Saving schedule:", schedule_path)
+
+                schedule_df = pd.DataFrame(schedule_rows)
+
+                schedule_df.to_csv(schedule_path, index=False)
+
+        except Exception as e:
+            print("Schedule error:", e)
+
+
+
+    # =====================================================
+    # 2️⃣ SAVE ASSEMBLIES DATA
+    # =====================================================
+
+    try:
+
+        envelope_floor = assemblies.get("floor", [])
+        envelope_wall = assemblies.get("wall", [])
+        envelope_roof = assemblies.get("roof", [])
+        envelope_shading = assemblies.get("shading", [])
+        envelope_tightness = assemblies.get("tightness", [])
+        envelope_window = assemblies.get("window", [])
+
+        if assemblies:
+          
+            floor_df = pd.DataFrame(envelope_floor)
+            wall_df = pd.DataFrame(envelope_wall)
+            roof_df = pd.DataFrame(envelope_roof)
+            window_df = pd.DataFrame(envelope_window)
+            tightness_df = pd.DataFrame(envelope_tightness)
+            shading_df = pd.DataFrame(envelope_shading)
+            floor_path = locator.get_envelope_floor()
+            wall_path=   locator.get_envelope_wall()
+            window_path=locator.get_envelope_window()
+            roof_path=locator.get_envelope_roof()
+            tightness_path=locator.get_envelope_tightness()
+            shading_path=locator.get_envelope_shading()
+            print("Saving envelope floor:", floor_path)
+            floor_df.to_csv(floor_path, index=False)
+            print("Saving envelope floor:", wall_path)
+            wall_df.to_csv(wall_path, index=False)
+            roof_df.to_csv(roof_path, index=False)
+            window_df.to_csv(window_path, index=False)
+            tightness_df.to_csv(tightness_path, index=False)
+            shading_df.to_csv(shading_path, index=False)
+    except Exception as e:
+
+        print("Assemblies save error:", e)
+
+
+
+
+    try:
+
+        component_rows = components.get("rows", [])
+
+        if component_rows:
+
+            df = pd.DataFrame(component_rows)
+
+            path = locator.get_database_components()
+
+            print("Saving components:", path)
+
+            df.to_csv(path, index=False)
+
+    except Exception as e:
+
+        print("Components save error:", e)
+
+
+
+    # =====================================================
+    # SUCCESS RESPONSE
+    # =====================================================
+
+    return JsonResponse({
+        "status": "All data saved successfully"
+    })

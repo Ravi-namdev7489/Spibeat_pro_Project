@@ -1,0 +1,3 @@
+name,bus,type,p_nom,p_nom_extendable,marginal_cost,capital_cost,state_of_charge_initial,max_hours,efficiency_store,efficiency_dispatch,standing_loss,p_nom_opt
+Battery1_DT8_415,DT8_415,Battery1,0.0003,True,100.0,8125000.0,3e-06,4.0,0.8,0.8,0.001,0.2671899301568801
+Battery2_DT6_415,DT6_415,Battery2,0.0003,True,100.0,100000000.0,3e-06,4.0,0.8,0.8,0.001,5.714285714285715e-07

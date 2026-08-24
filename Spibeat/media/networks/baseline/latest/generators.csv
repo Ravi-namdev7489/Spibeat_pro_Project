@@ -1,0 +1,2 @@
+name,bus,control,p_nom,carrier,efficiency
+G1,SS1_33,Slack,0.0008,Coal,0.8

@@ -1,0 +1,10 @@
+name,bus,carrier,p_set
+Load1,DT9_415,AC,0.05
+Load2,DT1_415,AC,0.05
+Load3,DT8_415,AC,0.05
+Load4,DT7_415,AC,0.05
+Load5,DT5_415,AC,0.05
+Load6,DT6_415,AC,0.05
+Load7,DT2_415,AC,0.05
+Load8,DT3_415,AC,0.05
+Load9,DT4_415,AC,0.05

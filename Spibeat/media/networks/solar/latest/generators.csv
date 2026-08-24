@@ -1,0 +1,3 @@
+name,bus,control,p_nom,p_nom_extendable,carrier,efficiency
+G1,SS1_33,Slack,0.0008,False,Coal,0.8
+Solar_DT1,DT8_415,PQ,0.03,True,solar,0.26

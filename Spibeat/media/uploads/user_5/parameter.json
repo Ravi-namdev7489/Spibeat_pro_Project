@@ -1,0 +1,114 @@
+{
+    "selected_buildings": [
+        "CHS48BB0020060021"
+    ],
+    "parameters": {
+        "CHS48BB0020060011": {
+            "name": "CHS48BB0020060011",
+            "class": "Educational",
+            "sub_class": "SCHOOL",
+            "use_type": "SCHOOL",
+            "footprint_area": 359.84,
+            "floor_area": 1439.37,
+            "height": 12.6,
+            "floors": 4,
+            "volume_m3": 4534.02,
+            "wall_area": 1137.78,
+            "roof_area": 359.84,
+            "window_area": 113.78,
+            "lat": 30.68841008,
+            "lon": 76.76424812,
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            76.76433457946571,
+                            30.688528882657142,
+                            328.63000000000466
+                        ],
+                        [
+                            76.76441348515252,
+                            30.688433522257625,
+                            328.63000000000466
+                        ],
+                        [
+                            76.76418495456737,
+                            30.688291174709544,
+                            328.63000000000466
+                        ],
+                        [
+                            76.76411939604525,
+                            30.688397055069636,
+                            328.63000000000466
+                        ],
+                        [
+                            76.76433457946571,
+                            30.688528882657142,
+                            328.63000000000466
+                        ]
+                    ]
+                ]
+            },
+            "floor": "FLOOR_CONCRETE",
+            "wall": "WALL_AS1",
+            "roof": "ROOF_AS1",
+            "window": "WINDOW_AS1",
+            "tightness": "TIGHTNESS_HIGHLY TIGHT",
+            "shading": "SHADE_NONE",
+            "hotwater_temp": "MEDIUM_TEMP",
+            "cooling_temp": "CENTRAL_AC"
+        },
+        "CHS48BB0020060021": {
+            "name": "CHS48BB0020060021",
+            "class": "Educational",
+            "sub_class": "SCHOOL",
+            "use_type": "SCHOOL",
+            "footprint_area": 298.32,
+            "floor_area": 894.96,
+            "height": 11.47,
+            "floors": 3,
+            "volume_m3": 3421.71,
+            "wall_area": 1115.34,
+            "roof_area": 298.32,
+            "window_area": 111.53,
+            "lat": 30.68843972,
+            "lon": 76.76258874,
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            76.76276111985767,
+                            30.68838692349083,
+                            326.47000000000116
+                        ],
+                        [
+                            76.76247472307642,
+                            30.688422459584892,
+                            326.47000000000116
+                        ],
+                        [
+                            76.76264523436893,
+                            30.688539498267865,
+                            326.47000000000116
+                        ],
+                        [
+                            76.76276111985767,
+                            30.68838692349083,
+                            326.47000000000116
+                        ]
+                    ]
+                ]
+            },
+            "floor": "FLOOR_CONCRETE",
+            "wall": "WALL_AS1",
+            "roof": "ROOF_AS1",
+            "window": "WINDOW_AS1",
+            "tightness": "TIGHTNESS_HIGHLY TIGHT",
+            "shading": "SHADE_NONE",
+            "hotwater_temp": "MEDIUM_TEMP",
+            "cooling_temp": "CENTRAL_AC"
+        }
+    }
+}
